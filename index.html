@@ -145,23 +145,28 @@
                 pFinal = Math.max(itemAtual.precoBase - (gastas / 5 * 2.0), 1.0);
                 localStorage.setItem('moedas', m - gastas);
             }
+            
             await fetch(WEBHOOK_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     embeds: [{
                         title: "🚀 NOVA COMPRA BRAINROT",
+                        color: 3447003, // Cor azul idêntica à da sua imagem
                         fields: [
-                            { name: "👤 Nick/ID", value: nick, inline: true },
+                            { name: "👤 Nick", value: nick, inline: false },
                             { name: "📦 Item", value: itemAtual.nome, inline: true },
-                            { name: "💰 Total", value: `R$ ${pFinal.toFixed(2)}`, inline: true }
-                        ]
+                            { name: "💰 Total", value: `R$ ${pFinal.toFixed(2)}`, inline: true },
+                            { name: "🪙 Moedas", value: carregarMoedas().toString(), inline: true },
+                            { name: "🔑 Hash", value: Math.random().toString(36).substring(2, 8).toUpperCase(), inline: false }
+                        ],
+                        footer: { text: "Sistema de Vendas Brainrot • " + itemAtual.desc }, // Mostra a descrição no rodapé
+                        timestamp: new Date().toISOString() // Adiciona o horário da compra
                     }]
                 })
             });
             window.location.href = LINK_DISCORD;
-        };
-
+        }
         document.getElementById('resgate-btn').onclick = function() {
             let input = document.getElementById('codigo-input').value.trim().toUpperCase();
             database.ref('codigos/' + input).once('value').then((snapshot) => {
