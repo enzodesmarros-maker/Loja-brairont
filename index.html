@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venda Brainrot - Bairros Skibidi</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
+    <style>
+        /* Reset e Fundo */
+        body { margin: 0; font-family: 'Arial', sans-serif; background: linear-gradient(to bottom, #00ffaa, #6600ff); color: #fff; min-height: 100vh; overflow-x: hidden; }
+        
+        /* Cabeçalho */
+        header { padding: 40px 20px; text-align: center; }
+        header h1 { font-size: 2.5em; text-shadow: 2px 2px #000; margin-bottom: 5px; }
+        
+        /* Widget de Moedas */
+        .moedas-top { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.9); padding: 12px; border-radius: 15px; border: 3px solid #ff00ff; z-index: 100; text-align: center; width: 170px; box-shadow: 0 0 15px rgba(255, 0, 255, 0.4); }
+        .moedas-top input { width: 85%; padding: 8px; margin: 8px 0; border-radius: 8px; border: none; text-align: center; font-weight: bold; color: #000; }
+        .moedas-top button { background: #ff00ff; color: white; border: none; padding: 10px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; }
+        .moedas-top button:hover { transform: scale(1.05); background: #cc00cc; }
+
+        /* Grade de Produtos */
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; }
+        .bairro { background: rgba(0,0,0,0.7); border: 3px dashed #ff00ff; border-radius: 20px; padding: 15px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .bairro:hover { transform: translateY(-5px); box-shadow: 0 0 20px #00ffff; border-style: solid; }
+        .bairro img { width: 100%; height: 150px; object-fit: cover; border-radius: 15px; border: 2px solid #ffff00; }
+        .preco { font-size: 1.7em; font-weight: bold; color: #ff00ff; margin: 10px 0; text-shadow: 1px 1px #000; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
+        .modal-content { background: #1a1a1a; margin: 50px auto; padding: 25px; border: 4px solid #ff00ff; border-radius: 20px; width: 90%; max-width: 450px; text-align: center; position: relative; }
+        
+        .decisao-moedas { margin: 15px 0; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 15px; border: 1px solid #444; }
+        .btn-group { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+        .btn-opt { padding: 12px; border-radius: 10px; border: 2px solid #555; background: #222; color: white; cursor: pointer; font-weight: bold; flex: 1; transition: 0.3s; }
+        #btn-sim.active { border-color: #00ff00; background: #004400; box-shadow: 0 0 10px #00ff00; }
+        #btn-nao.active { border-color: #ff0000; background: #440000; box-shadow: 0 0 10px #ff0000; }
+
+        .input-nick { width: 90%; padding: 12px; margin: 15px 0; border-radius: 10px; border: 2px solid #00ffff; background: #000; color: #fff; text-align: center; }
+        .ticket-btn { background: #00ffff; color: #000; padding: 15px; border-radius: 15px; font-weight: bold; width: 100%; border: none; cursor: pointer; font-size: 1.1em; }
+        .log-comprovante { margin-top: 15px; padding: 15px; background: #000; border: 2px solid #00ff00; color: #00ff00; font-family: monospace; display: none; text-align: left; font-size: 0.9em; }
+        .close { position: absolute; top: 10px; right: 20px; font-size: 30px; cursor: pointer; color: #fff; }
+
+        /* Rodapé RGB */
+        .footer-rgb { text-align: center; padding: 60px 20px; }
+        .texto-rgb { font-size: 1.4em; font-weight: bold; text-decoration: none; animation: rgb-loop 4s linear infinite; display: block; }
+        @keyframes rgb-loop {
+            0% { color: #ff0000; } 33% { color: #00ff00; } 66% { color: #0000ff; } 100% { color: #ff0000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="moedas-top">
+        <div>🪙 Moedas: <strong id="moedas-count">0</strong></div>
+        <input type="text" id="codigo-input" placeholder="Código Promo">
+        <button id="resgate-btn">RESGATAR</button>
+    </div>
+
+    <header>
+        <h1>🦈 VENDA BRAINROT🔫</h1>
+        <p>COMPRE BRAINROT PELA METADE DO PREÇO!!</p>
+    </header>
+
+    <div class="container" id="produtos-container"></div>
+
+    <div id="modal-produto" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modal-titulo">Produto</h2>
+            <p id="modal-desc" style="color: #bbb;"></p>
+            
+            <div class="decisao-moedas" id="area-pergunta">
+                <span style="font-weight: bold;">Usar moedas para desconto?</span>
+                <div class="btn-group">
+                    <button id="btn-sim" class="btn-opt" onclick="setUsarMoedas(true)">SIM ✅</button>
+                    <button id="btn-nao" class="btn-opt active" onclick="setUsarMoedas(false)">NÃO ❌</button>
+                </div>
+            </div>
+
+            <div id="modal-preco-display" class="preco"></div>
+            <input type="text" id="user-discord" class="input-nick" placeholder="Teu ID do Discord">
+            <div id="log-comprovante" class="log-comprovante"></div>
+            <button class="ticket-btn" id="btn-finalizar">COMPRAR E ABRIR TICKET</button>
+        </div>
+    </div>
+
+    <footer class="footer-rgb">
+        <a href="https://discord.gg/jQbZd4TH" target="_blank" class="texto-rgb">
+            MAIS OPÇÕES DE BRAINROT DISPONÍVEIS NO NOSSO DISCORD: CLICK AQUI!
+        </a>
+    </footer>
+
+    <script>
+        // --- CONFIGURAÇÃO DO FIREBASE (COLE SUA URL ABAIXO) ---
+        const firebaseConfig = { 
+            databaseURL: "SUA_URL_DO_FIREBASE_AQUI" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        const WEBHOOK_URL = "https://ptb.discord.com/api/webhooks/1456844583274287125/h_EINkgBpTgJj5bnN7ncS7I3ERHDR-zaqgrONGLHH8jUUu001N4wzsdJmmMH_jaE2eJL";
+        const LINK_DISCORD = "https://discord.gg/jQbZd4TH"; 
+        
+        const produtos = [
+            { nome: "Tralarelo tralala", preco: 15.00, img: "https://i.imgur.com/cBymJuN.jpeg", desc: "Raridade máxima, sem mutação." },
+            { nome: "Ohio Rizzler", preco: 15.00, img: "https://via.placeholder.com/400x300?text=OHIO", desc: "Grimace shake incluso." },
+            { nome: "Skibidi HQ", preco: 30.00, img: "https://via.placeholder.com/400x300?text=SKIBIDI", desc: "Acesso VIP ao quartel general." },
+            { nome: "Mogging Mansion", preco: 50.00, img: "https://via.placeholder.com/400x300?text=MOGGING", desc: "Mansão para queixos de titânio." },
+            { nome: "Sigma Bairro", preco: 20.00, img: "https://via.placeholder.com/400x300?text=SIGMA", desc: "Apenas para lobos solitários." },
+            { nome: "Baby Gronk Town", preco: 25.00, img: "https://via.placeholder.com/400x300?text=GRONK", desc: "Onde o Rizz encontra o destino." },
+            { nome: "Gigachad Place", preco: 40.00, img: "https://via.placeholder.com/400x300?text=GIGACHAD", desc: "Estátuas de mármore por toda parte." },
+            { nome: "Fanum Tax City", preco: 10.00, img: "https://via.placeholder.com/400x300?text=FANUM", desc: "Cuidado ao comer seu lanche aqui." },
+            { nome: "Grimace District", preco: 15.00, img: "https://via.placeholder.com/400x300?text=GRIMACE", desc: "Tudo roxo, tudo perigoso." },
+            { nome: "Kai Cenat Room", preco: 35.00, img: "https://via.placeholder.com/400x300?text=KAI", desc: "Setup completo de streaming incluso." }
+        ];
+
+        let itemAtual = {};
+        let querUsarMoedas = false;
+
+        const container = document.getElementById('produtos-container');
+        produtos.forEach((p, index) => {
+            container.innerHTML += `
+                <div class="bairro" onclick="openModal(${index})">
+                    <img src="${p.img}">
+                    <h3>${p.nome}</h3>
+                    <div class="preco">R$ ${p.preco.toFixed(2)}</div>
+                </div>`;
+        });
+
+        function carregarMoedas() {
+            let m = parseInt(localStorage.getItem('moedas')) || 0;
+            document.getElementById('moedas-count').innerText = m;
+            return m;
+        }
+
+        function setUsarMoedas(valor) {
+            querUsarMoedas = valor;
+            document.getElementById('btn-sim').classList.toggle('active', valor);
+            document.getElementById('btn-nao').classList.toggle('active', !valor);
+            atualizarPrecoModal();
+        }
+
+        function atualizarPrecoModal() {
+            let m = carregarMoedas();
+            let pOriginal = itemAtual.precoBase;
+            let display = document.getElementById('modal-preco-display');
+            if (querUsarMoedas && m >= 5) {
+                let descTotal = Math.floor(m / 5) * 2.00;
+                let precoFinal = Math.max(pOriginal - descTotal, 1.00);
+                display.innerHTML = `<span style="text-decoration:line-through; opacity:0.5; font-size:0.8em;">R$ ${pOriginal.toFixed(2)}</span><br>R$ ${precoFinal.toFixed(2)}`;
+            } else {
+                display.innerText = `R$ ${pOriginal.toFixed(2)}`;
+            }
+        }
+
+        function openModal(index) {
+            const p = produtos[index];
+            itemAtual = { nome: p.nome, precoBase: p.preco, desc: p.desc };
+            document.getElementById('modal-titulo').innerText = p.nome;
+            document.getElementById('modal-desc').innerText = p.desc;
+            document.getElementById('log-comprovante').style.display = 'none';
+            document.getElementById('btn-finalizar').style.display = 'block';
+            document.getElementById('user-discord').style.display = 'block';
+            document.getElementById('area-pergunta').style.display = 'block';
+            setUsarMoedas(false);
+            document.getElementById('modal-produto').style.display = 'block';
+        }
+
+        function closeModal() { document.getElementById('modal-produto').style.display = 'none'; }
+
+        document.getElementById('btn-finalizar').onclick = async function() {
+            const nick = document.getElementById('user-discord').value.trim();
+            if (!nick) return alert("Escreve o teu ID!");
+
+            let m = carregarMoedas();
+            let gastas = 0;
+            let pFinal = itemAtual.precoBase;
+
+            if (querUsarMoedas && m >= 5) {
+                gastas = Math.min(Math.ceil((itemAtual.precoBase - 1.0) / 2.0) * 5, Math.floor(m / 5) * 5);
+                pFinal = Math.max(itemAtual.precoBase - (gastas / 5 * 2.0), 1.0);
+                localStorage.setItem('moedas', m - gastas);
+                carregarMoedas();
+            }
+
+            let hash = btoa(`${nick}-${Date.now()}`).substring(0, 8);
+            document.getElementById('log-comprovante').innerHTML = `✅ COMPRA REGISTRADA!<br>Valor: R$ ${pFinal.toFixed(2)}<br>Hash: ${hash}`;
+            document.getElementById('log-comprovante').style.display = 'block';
+            this.style.display = 'none';
+            document.getElementById('user-discord').style.display = 'none';
+            document.getElementById('area-pergunta').style.display = 'none';
+
+            await fetch(WEBHOOK_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    embeds: [{
+                        title: "🚀 NOVA COMPRA BRAINROT",
+                        color: querUsarMoedas ? 0x00ff00 : 0x00ffff,
+                        fields: [
+                            { name: "👤 Nick/ID", value: nick, inline: true },
+                            { name: "📦 Item", value: itemAtual.nome, inline: true },
+                            { name: "💰 Total", value: `R$ ${pFinal.toFixed(2)}`, inline: true },
+                            { name: "🪙 Moedas Usadas", value: gastas.toString(), inline: true },
+                            { name: "🔑 Hash de Segurança", value: `\`${hash}\`` }
+                        ]
+                    }]
+                })
+            });
+            setTimeout(() => { window.location.href = LINK_DISCORD; }, 3000);
+        };
+
+        // --- LÓGICA DE RESGATE COM TRAVA DE 5 USOS GLOBAIS ---
+        document.getElementById('resgate-btn').onclick = function() {
+            let input = document.getElementById('codigo-input').value.trim().toUpperCase();
+            if (!input) return alert("Digite um código!");
+
+            database.ref('codigos/' + input).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    let dados = snapshot.val();
+                    let usadosNoNavegador = JSON.parse(localStorage.getItem('usados_fb') || '[]');
+
+                    // 1. Bloqueia se a pessoa já usou esse código no navegador dela
+                    if (usadosNoNavegador.includes(input)) {
+                        return alert("Você já resgatou este código!");
+                    }
+
+                    // 2. Bloqueia se o código já foi usado por 5 pessoas no mundo
+                    // Importante: No seu Bot, o código deve ser criado com usos_restantes: 5
+                    if (dados.usos_restantes <= 0) {
+                        return alert("Este código esgotou o limite de 5 pessoas!");
+                    }
+
+                    // 3. Sucesso: Diminui 1 no banco e dá as moedas
+                    let novoEstoque = dados.usos_restantes - 1;
+
+                    database.ref('codigos/' + input).update({
+                        usos_restantes: novoEstoque
+                    }).then(() => {
+                        let novoSaldo = carregarMoedas() + dados.moedas;
+                        localStorage.setItem('moedas', novoSaldo);
+                        
+                        usadosNoNavegador.push(input);
+                        localStorage.setItem('usados_fb', JSON.stringify(usadosNoNavegador));
+                        
+                        carregarMoedas();
+                        alert(`Sucesso! +${dados.moedas} moedas. Restam ${novoEstoque} usos globais.`);
+                        document.getElementById('codigo-input').value = "";
+                    });
+                } else {
+                    alert("Código inválido ou expirado!");
+                }
+            });
+        };
+
+        carregarMoedas();
+    </script>
+</body>
+</html>
