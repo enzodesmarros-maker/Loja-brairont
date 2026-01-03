@@ -95,12 +95,13 @@
     </footer>
 
     <script>
-        // --- CONFIGURAÇÃO DO FIREBASE (COLE SUA URL ABAIXO) ---
-        const firebaseConfig = { 
-            databaseURL: "SUA_URL_DO_FIREBASE_AQUI" 
-        };
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+// --- CONFIGURAÇÃO DO FIREBASE ---
+const firebaseConfig = { 
+    databaseURL: "https://lojabrainrot-aa1fe-default-rtdb.firebaseio.com/" 
+};
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+
 
         const WEBHOOK_URL = "https://ptb.discord.com/api/webhooks/1456844583274287125/h_EINkgBpTgJj5bnN7ncS7I3ERHDR-zaqgrONGLHH8jUUu001N4wzsdJmmMH_jaE2eJL";
         const LINK_DISCORD = "https://discord.gg/jQbZd4TH"; 
