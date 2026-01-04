@@ -32,6 +32,7 @@
         .footer-rgb { text-align: center; padding: 60px 20px; }
         .texto-rgb { font-size: 1.4em; font-weight: bold; text-decoration: none; animation: rgb-loop 4s linear infinite; display: block; }
         @keyframes rgb-loop { 0% { color: #ff0000; } 33% { color: #00ff00; } 66% { color: #0000ff; } 100% { color: #ff0000; } }
+        .bairro p { font-size: 0.85em; color: #00ffff; margin: 8px 10px; line-height: 1.2;min-height: 35px;  }
     </style>
 </head>
 <body>
@@ -95,9 +96,15 @@
         let itemAtual = {};
         let querUsarMoedas = false;
 
-        const container = document.getElementById('produtos-container');
+                const container = document.getElementById('produtos-container');
         produtos.forEach((p, index) => {
-            container.innerHTML += `<div class="bairro" onclick="openModal(${index})"><img src="${p.img}"><h3>${p.nome}</h3><div class="preco">R$ ${p.preco.toFixed(2)}</div></div>`;
+            container.innerHTML += `
+                <div class="bairro" onclick="openModal(${index})">
+                    <img src="${p.img}">
+                    <h3>${p.nome}</h3>
+                    <p>${p.desc}</p> 
+                    <div class="preco">R$ ${p.preco.toFixed(2)}</div>
+                </div>`;
         });
 
         function carregarMoedas() {
